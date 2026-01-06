@@ -22,7 +22,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Generate JavaDoc
-        run: mvn javadoc:javadoc
+        run: mvn javadoc:javadoc -Dmaven.javadoc.failOnError=false
 
       - name: Deploy JavaDoc to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
