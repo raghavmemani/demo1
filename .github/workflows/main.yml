@@ -1,31 +1,11 @@
-name: Generate JavaDoc
+name: Build using Central CI
 
 on:
   push:
     branches: [ "main" ]
 
-permissions:
-  contents: write
-
 jobs:
-  javadoc:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-
-      - name: Generate JavaDoc
-        run: mvn javadoc:javadoc -Dmaven.javadoc.failOnError=false
-
-      - name: Deploy JavaDoc to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./target/site
+  build:
+    uses: raghavmemani/CENTRAL-REPOSIORY-/.github/workflows/java-build.yml@main
+    with:
+      java-version: "21"
