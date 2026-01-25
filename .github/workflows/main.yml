@@ -1,0 +1,11 @@
+name: Build using Central CI
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    uses: raghavmemani/CENTRAL-REPOSIORY-/.github/workflows/java-build.yml@main
+    with:
+      java-version: "21"
