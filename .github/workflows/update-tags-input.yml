@@ -2,55 +2,43 @@ name: Update Release Tag Inputs
 
 on:
   schedule:
-    - cron: "*/1 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
-  update:
+  update-tags:
     runs-on: ubuntu-latest
 
-    # 🔑 REQUIRED permissions
     permissions:
-      contents: write
-      workflows: write
+      contents: write   # ✅ ONLY valid permission needed
 
     steps:
       # --------------------------
-      # Checkout repository
+      # Checkout
       # --------------------------
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       # --------------------------
-      # Debug: Show repo structure
+      # Debug repo state
       # --------------------------
       - name: Debug repo files
         run: |
           echo "===== ROOT FILES ====="
           ls -la
           echo "===== WORKFLOWS ====="
-          ls -la .github/workflows
+          ls -la .github/workflows || true
 
       # --------------------------
-      # Make script executable
+      # Make shell script executable
       # --------------------------
-      - name: Make update script executable
-        run: |
-          chmod +x .github/workflows/update-workflow-options.sh
-          ls -l .github/workflows/update-workflow-options.sh
+      - name: Make script executable
+        run: chmod +x .github/workflows/update-workflow-options.sh
 
       # --------------------------
-      # Debug: Show workflow BEFORE
-      # --------------------------
-      - name: Show test-and-deploy.yml BEFORE
-        run: |
-          echo "===== BEFORE ====="
-          cat .github/workflows/test-and-deploy.yml
-
-      # --------------------------
-      # Run your shell script
+      # Run shell script (YOUR LOGIC)
       # --------------------------
       - name: Run update-workflow-options.sh
         run: |
@@ -58,20 +46,13 @@ jobs:
           .github/workflows/update-workflow-options.sh
 
       # --------------------------
-      # Debug: Show workflow AFTER
+      # Debug changed files
       # --------------------------
-      - name: Show test-and-deploy.yml AFTER
+      - name: Show git diff
         run: |
-          echo "===== AFTER ====="
-          cat .github/workflows/test-and-deploy.yml
-
-      # --------------------------
-      # Debug: Show artifact-list.txt
-      # --------------------------
-      - name: Show artifact-list.txt
-        run: |
-          echo "===== artifact-list.txt ====="
-          cat artifact-list.txt
+          echo "===== GIT DIFF ====="
+          git status
+          git diff
 
       # --------------------------
       # Commit changes
@@ -79,7 +60,7 @@ jobs:
       - name: Commit updated workflow
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: auto-update artifact dropdown options"
+          commit_message: "chore: update workflow options (debug)"
           file_pattern: |
             .github/workflows/test-and-deploy.yml
             artifact-list.txt
