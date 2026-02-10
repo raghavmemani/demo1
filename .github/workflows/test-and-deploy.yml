@@ -1,22 +1,25 @@
-# .github/workflows/deploy.yml
 name: Deploy Release
+
 on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Select the release tag to deploy (auto-updated daily)"
+        description: "Select the release tag to deploy (auto-updated)"
         required: true
         type: choice
-        options: []  # Will be populated dynamically!
+        options: []   # ⬅ updated automatically by cron job
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout selected tag
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.release_tag }}
+
       - name: Deploy
-        run: echo "Deploying ${{ github.event.inputs.release_tag }}..."
-        # Add your actual deployment steps here (e.g., to AWS, Kubernetes)
+        run: |
+          echo "🚀 Deploying release: ${{ github.event.inputs.release_tag }}"
+          # put real deployment steps here

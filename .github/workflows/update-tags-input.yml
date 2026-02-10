@@ -2,7 +2,7 @@ name: Update Release Tag Inputs
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/1 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -17,7 +17,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install yq (force v4)
+      # --- Install mikefarah/yq v4 (force correct binary) ---
+      - name: Install yq (v4)
         run: |
           sudo rm -f /usr/bin/yq /usr/local/bin/yq || true
           sudo wget -qO /usr/local/bin/yq \
@@ -25,6 +26,7 @@ jobs:
           sudo chmod +x /usr/local/bin/yq
           yq --version
 
+      # --- Fetch tags and expose as workflow output ---
       - name: Fetch recent Git tags
         id: fetch_tags
         run: |
@@ -35,15 +37,18 @@ jobs:
             | jq -s .)
 
           echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+          echo "Fetched tags: $TAGS"
 
+      # --- Update deploy.yml safely ---
       - name: Update deploy.yml with dynamic tags
+        env:
+          TAGS: ${{ steps.fetch_tags.outputs.tags }}
         run: |
           yq eval \
             '.on.workflow_dispatch.inputs.release_tag.options = env(TAGS)' \
             -i .github/workflows/deploy.yml
-        env:
-          TAGS: ${{ steps.fetch_tags.outputs.tags }}
 
+      # --- Commit changes ---
       - name: Commit updated workflow
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
