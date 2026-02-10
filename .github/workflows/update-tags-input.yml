@@ -9,12 +9,14 @@ jobs:
   update-tags:
     runs-on: ubuntu-latest
 
+    # 🔥 REQUIRED PERMISSIONS (THIS FIXES YOUR ERROR)
     permissions:
-      contents: write   # ✅ ONLY valid permission needed
+      contents: write
+      workflows: write
 
     steps:
       # --------------------------
-      # Checkout
+      # Checkout repository
       # --------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,7 +24,7 @@ jobs:
           fetch-depth: 0
 
       # --------------------------
-      # Debug repo state
+      # Debug repo structure
       # --------------------------
       - name: Debug repo files
         run: |
@@ -38,7 +40,7 @@ jobs:
         run: chmod +x .github/workflows/update-workflow-options.sh
 
       # --------------------------
-      # Run shell script (YOUR LOGIC)
+      # Run YOUR shell script (UNCHANGED)
       # --------------------------
       - name: Run update-workflow-options.sh
         run: |
@@ -46,12 +48,21 @@ jobs:
           .github/workflows/update-workflow-options.sh
 
       # --------------------------
-      # Debug changed files
+      # Debug output files
+      # --------------------------
+      - name: Debug artifact list
+        run: |
+          echo "===== artifact-list.txt ====="
+          cat artifact-list.txt || echo "artifact-list.txt not found"
+
+      # --------------------------
+      # Debug git diff
       # --------------------------
       - name: Show git diff
         run: |
-          echo "===== GIT DIFF ====="
+          echo "===== GIT STATUS ====="
           git status
+          echo "===== GIT DIFF ====="
           git diff
 
       # --------------------------
