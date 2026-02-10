@@ -1,34 +1,40 @@
 name: Update Release Tag Inputs
+
 on:
   schedule:
-    - cron: "*/1 * * * *"  # Run daily at midnight UTC
-  workflow_dispatch:  # Allow manual triggering if needed
+    - cron: "*/1 * * * *"   # Run daily at midnight UTC
+  workflow_dispatch:
 
 jobs:
   update-tags:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history to get tags
+          fetch-depth: 0   # Required to fetch tags
 
-      - name: Install dependencies (yq)
-        run: |
-          # Install yq (YAML parser) to edit the workflow file
-          sudo apt update && sudo apt install -y yq
+      # ✅ Install CORRECT yq (mikefarah v4)
+      - name: Install yq
+        uses: mikefarah/yq@v4
 
       - name: Fetch recent Git tags
         id: fetch_tags
         run: |
-          # Fetch all tags, sort by version (newest first), take top 5
-          TAGS=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 5 | tr '\n' ' ')
-          echo "TAGS=($TAGS)" >> $GITHUB_OUTPUT
+          TAGS_JSON=$(git tag --sort=-v:refname \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | head -n 5 \
+            | jq -R . \
+            | jq -s .)
+
+          echo "tags=$TAGS_JSON" >> "$GITHUB_OUTPUT"
 
       - name: Update deploy.yml with dynamic tags
         run: |
-          # Use yq to overwrite the 'options' array in deploy.yml
-          yq eval ".on.workflow_dispatch.inputs.release_tag.options = ${{ steps.fetch_tags.outputs.TAGS }}" -i .github/workflows/deploy.yml
+          yq -i \
+            ".on.workflow_dispatch.inputs.release_tag.options = ${{ steps.fetch_tags.outputs.tags }}" \
+            .github/workflows/deploy.yml
 
       - name: Commit updated workflow
         uses: stefanzweifel/git-auto-commit-action@v5
