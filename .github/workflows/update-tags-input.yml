@@ -63,7 +63,7 @@ jobs:
       # --------------------------
       - name: Show test-and-deploy.yml BEFORE update
         run: |
-          echo "===== deploy.yml BEFORE ====="
+          echo "===== test-and-deploy.yml BEFORE ====="
           cat .github/workflows/test-and-deploy.yml
 
       # --------------------------
@@ -84,10 +84,10 @@ jobs:
       # --------------------------
       # Debug: Show deploy.yml AFTER updating
       # --------------------------
-      - name: Show deploy.yml AFTER update
+      - name: Show test-and-deploy.yml AFTER update
         run: |
-          echo "===== deploy.yml AFTER ====="
-          cat .github/workflows/deploy.yml
+          echo "===== test-and-deploy.yml AFTER ====="
+          cat .github/workflows/test-and-deploy.yml
 
       # --------------------------
       # Commit changed file
@@ -96,4 +96,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: update release_tag options (debug)"
-          file_pattern: ".github/workflows/deploy.yml"
+          file_pattern: ".github/workflows/test-and-deploy.yml"
