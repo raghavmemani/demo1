@@ -1,22 +1,29 @@
-# .github/workflows/deploy.yml
-name: Deploy Release
+name: Deploy / Build Selected Artifact
+
 on:
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: "Select the release tag to deploy (auto-updated daily)"
+      artifact_id:
+        description: "Enter Maven artifactId (must exist in artifact-list.txt)"
         required: true
-        type: choice
-        options: []  # Will be populated dynamically!
+        type: string
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.release_tag }}
-      - name: Deploy
-        run: echo "Deploying ${{ github.event.inputs.release_tag }}..."
-        # Add your actual deployment steps here (e.g., to AWS, Kubernetes)
+
+      - name: Generate artifact list
+        run: |
+          ./scripts/extract-artifacts.sh
+
+      - name: Validate user input
+        run: |
+          ./scripts/validate-artifact.sh "${{ github.event.inputs.artifact_id }}"
+
+      - name: Build selected module
+        run: |
+          mvn clean install -pl "${{ github.event.inputs.artifact_id }}" -am
