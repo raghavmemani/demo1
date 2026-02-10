@@ -1,26 +1,44 @@
 #!/bin/bash
+set -e
 
 POM_FILE="pom.xml"
-WORKFLOW_FILE=".github/workflows/main.yml"
-TARGET_ARTIFACT="spring-boot-configuration-processor"
+WORKFLOW_FILE=".github/workflows/test-and-deploy.yml"
+OUTPUT_FILE="artifact-list.txt"
 
-# 1. Extract artifact list
-ARTIFACTS=$(awk '
-  /<artifactId>'"$TARGET_ARTIFACT"'<\/artifactId>/ {found=1; next}
-  found && /<artifactId>/ {
-    gsub(/.*<artifactId>|<\/artifactId>.*/, "", $0)
-    print "          - " $0
+START_MARKER="# AUTO-GENERATED-OPTIONS-START"
+END_MARKER="# AUTO-GENERATED-OPTIONS-END"
+
+echo "🔍 Extracting artifactIds from pom.xml..."
+
+ARTIFACTS=$(grep -oP '(?<=<artifactId>).*?(?=</artifactId>)' "$POM_FILE" \
+  | sort -u)
+
+if [ -z "$ARTIFACTS" ]; then
+  echo "❌ No artifactIds found"
+  exit 1
+fi
+
+echo "$ARTIFACTS" > "$OUTPUT_FILE"
+
+TMP_FILE=$(mktemp)
+
+awk -v start="$START_MARKER" -v end="$END_MARKER" -v items="$ARTIFACTS" '
+{
+  print
+  if ($0 ~ start) {
+    split(items, arr, "\n")
+    for (i in arr) {
+      printf "          - %s\n", arr[i]
+    }
+    skip=1
   }
-' "$POM_FILE" | sort -u)
+  if ($0 ~ end) skip=0
+  next
+}
+' "$WORKFLOW_FILE" > "$TMP_FILE"
 
-# 2. Replace OPTIONS block in workflow
-awk -v list="$ARTIFACTS" '
-  BEGIN {inside=0}
-  /# AUTO-GENERATED-OPTIONS-START/ {print; print list; inside=1; next}
-  /# AUTO-GENERATED-OPTIONS-END/   {inside=0}
-  !inside {print}
-' "$WORKFLOW_FILE" > temp.yml
+mv "$TMP_FILE" "$WORKFLOW_FILE"
 
-mv temp.yml "$WORKFLOW_FILE"
-
-echo "Workflow options updated"
+echo "✅ Updated workflow options"
+echo "📄 artifact-list.txt contents:"
+cat "$OUTPUT_FILE"

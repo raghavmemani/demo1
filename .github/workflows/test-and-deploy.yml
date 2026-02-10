@@ -16,6 +16,5 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-      - name: Print selected artifact
-        run: |
+      - run: |
           echo "Selected artifact: ${{ github.event.inputs.artifact_name }}"
