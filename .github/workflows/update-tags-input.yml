@@ -1,72 +1,28 @@
-name: Update Workflow Options
+name: Update Artifact List
 
 on:
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
 
-# ✅ MUST be here (NOT inside job)
 permissions:
-  contents: write
-  workflows: write
+  contents: write   # allowed
 
 jobs:
-  update-options:
+  generate:
     runs-on: ubuntu-latest
 
     steps:
-      # --------------------------
-      # Checkout repository
-      # --------------------------
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
 
-      # --------------------------
-      # Debug repo structure
-      # --------------------------
-      - name: Debug repository
-        run: |
-          echo "===== ROOT ====="
-          ls -la
-          echo "===== WORKFLOWS ====="
-          ls -la .github/workflows || true
-
-      # --------------------------
-      # Make script executable
-      # --------------------------
       - name: Make script executable
         run: chmod +x .github/workflows/update-workflow-options.sh
 
-      # --------------------------
-      # Run YOUR shell script
-      # --------------------------
-      - name: Run update-workflow-options.sh
-        run: |
-          echo "===== RUNNING SCRIPT ====="
-          .github/workflows/update-workflow-options.sh
+      - name: Generate artifact list
+        run: .github/workflows/update-workflow-options.sh
 
-      # --------------------------
-      # Debug results
-      # --------------------------
-      - name: Show artifact list
-        run: |
-          echo "===== artifact-list.txt ====="
-          cat artifact-list.txt || echo "❌ file not found"
-
-      - name: Show workflow AFTER update
-        run: |
-          echo "===== test-and-deploy.yml ====="
-          cat .github/workflows/test-and-deploy.yml
-
-      # --------------------------
-      # Commit changes
-      # --------------------------
-      - name: Commit updated files
+      - name: Commit artifact list
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: auto-update workflow options"
-          file_pattern: |
-            .github/workflows/test-and-deploy.yml
-            artifact-list.txt
+          commit_message: "chore: update artifact list"
+          file_pattern: artifact-list.txt
