@@ -20,5 +20,5 @@ fi
 
 echo "$ARTIFACTS" > "$OUTPUT_FILE"
 
-echo "✅ artifact-list.txt updated"
+echo "✅ artifact-list.txt updated:"
 cat "$OUTPUT_FILE"

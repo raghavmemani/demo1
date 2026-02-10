@@ -18,11 +18,11 @@ jobs:
 
       - name: Generate artifact list
         run: |
-          ./scripts/extract-artifacts.sh
+          .github/workflows/extract-artifacts.sh
 
       - name: Validate user input
         run: |
-          ./scripts/validate-artifact.sh "${{ github.event.inputs.artifact_id }}"
+          .github/workflows/validate-artifact.sh "${{ github.event.inputs.artifact_id }}"
 
       - name: Build selected module
         run: |
