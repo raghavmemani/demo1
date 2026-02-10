@@ -1,20 +1,22 @@
-name: Test and Deploy
-
+# .github/workflows/deploy.yml
+name: Deploy Release
 on:
   workflow_dispatch:
     inputs:
-      artifact_name:
-        description: "Enter artifact name (see artifact-list.txt)"
+      release_tag:
+        description: "Select the release tag to deploy (auto-updated daily)"
         required: true
         type: choice
-        options:
-          # AUTO-GENERATED-OPTIONS-START
-          - placeholder
-          # AUTO-GENERATED-OPTIONS-END
+        options: []  # Will be populated dynamically!
 
 jobs:
-  run:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          echo "Selected artifact: ${{ github.event.inputs.artifact_name }}"
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.release_tag }}
+      - name: Deploy
+        run: echo "Deploying ${{ github.event.inputs.release_tag }}..."
+        # Add your actual deployment steps here (e.g., to AWS, Kubernetes)
