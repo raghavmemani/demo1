@@ -2,7 +2,7 @@ name: Update Release Tag Inputs
 
 on:
   schedule:
-    - cron: "*/1 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -17,40 +17,83 @@ jobs:
         with:
           fetch-depth: 0
 
-      # --- Install mikefarah/yq v4 (force correct binary) ---
-      - name: Install yq (v4)
+      # --------------------------
+      # Install yq binary (v4.x)
+      # --------------------------
+      - name: Install yq v4
         run: |
-          sudo rm -f /usr/bin/yq /usr/local/bin/yq || true
           sudo wget -qO /usr/local/bin/yq \
             https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
+          echo "YQ Version:"
           yq --version
 
-      # --- Fetch tags and expose as workflow output ---
+      # --------------------------
+      # Fetch Tags
+      # --------------------------
       - name: Fetch recent Git tags
         id: fetch_tags
         run: |
-          TAGS=$(git tag --sort=-v:refname \
+          echo "===== FETCHING TAGS ====="
+          git fetch --tags
+          echo "All tags in repo:"
+          git tag --sort=-v:refname | cat
+
+          TAGS_JSON=$(git tag --sort=-v:refname \
             | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
             | head -n 5 \
             | jq -R . \
             | jq -s .)
 
-          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
-          echo "Fetched tags: $TAGS"
+          echo "===== TAGS AS JSON ARRAY ====="
+          echo "$TAGS_JSON"
 
-      # --- Update deploy.yml safely ---
-      - name: Update test-and-deploy.yml with dynamic tags
-        env:
-          TAGS: ${{ steps.fetch_tags.outputs.tags }}
+          echo "tags=$TAGS_JSON" >> "$GITHUB_OUTPUT"
+
+      # --------------------------
+      # Debug: Raw output
+      # --------------------------
+      - name: Debug TAG output from previous step
         run: |
-          yq eval \
-            '.on.workflow_dispatch.inputs.release_tag.options = env(TAGS)' \
-            -i .github/workflows/test-and-deploy.yml
+          echo "===== RAW TAGS FROM OUTPUT ====="
+          echo "${{ steps.fetch_tags.outputs.tags }}"
 
-      # --- Commit changes ---
+      # --------------------------
+      # Debug: Show deploy.yml BEFORE updating
+      # --------------------------
+      - name: Show deploy.yml BEFORE update
+        run: |
+          echo "===== deploy.yml BEFORE ====="
+          cat .github/workflows/deploy.yml
+
+      # --------------------------
+      # Update deploy.yml using yq
+      # --------------------------
+      - name: Update deploy.yml with dynamic tags
+        run: |
+          echo "===== RUNNING YQ UPDATE ====="
+          echo "Tags passed to yq:"
+          echo "$tags"
+
+          yq eval \
+            '.on.workflow_dispatch.inputs.release_tag.options = env(tags)' \
+            -i .github/workflows/deploy.yml
+        env:
+          tags: ${{ steps.fetch_tags.outputs.tags }}
+
+      # --------------------------
+      # Debug: Show deploy.yml AFTER updating
+      # --------------------------
+      - name: Show deploy.yml AFTER update
+        run: |
+          echo "===== deploy.yml AFTER ====="
+          cat .github/workflows/deploy.yml
+
+      # --------------------------
+      # Commit changed file
+      # --------------------------
       - name: Commit updated workflow
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: update release_tag options"
+          commit_message: "chore: update release_tag options (debug)"
           file_pattern: ".github/workflows/deploy.yml"
