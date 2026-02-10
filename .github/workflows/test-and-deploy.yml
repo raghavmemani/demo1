@@ -4,13 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       test_type:
+        description: "kafka | postgres | full"
+        required: true
+        default: full
+        type: choice
         options:
           - kafka
           - postgres
-          - -full
-        description: "kafka | postgres | full"
-        required: true
-        default: "full"
+          - full
 
 env:
   KUBE_NAMESPACE: dev
@@ -45,7 +46,6 @@ jobs:
 
       # -----------------------------
       # 4. Configure kubeconfig
-      # (Rancher / EKS / local cluster)
       # -----------------------------
       - name: Configure kubeconfig
         run: |
@@ -93,7 +93,9 @@ jobs:
       # -----------------------------
       - name: Wait for deployment
         run: |
-          kubectl rollout status deployment/$APP_NAME -n $KUBE_NAMESPACE --timeout=120s
+          kubectl rollout status deployment/$APP_NAME \
+            -n $KUBE_NAMESPACE \
+            --timeout=120s
 
       # -----------------------------
       # 10. Run integration tests (K8s Job)
@@ -101,7 +103,11 @@ jobs:
       - name: Run API Tests
         run: |
           kubectl apply -f helm/hello-app/templates/job-test.yaml -n $KUBE_NAMESPACE
-          kubectl wait --for=condition=complete job/hello-test -n $KUBE_NAMESPACE --timeout=120s
+          kubectl wait \
+            --for=condition=complete \
+            job/hello-test \
+            -n $KUBE_NAMESPACE \
+            --timeout=120s
 
       # -----------------------------
       # 11. Fetch test logs
