@@ -1,128 +1,86 @@
-name: Spring Boot Test & Deploy Pipeline
+name: Maven Artifact Selector (Shell Based)
 
 on:
   workflow_dispatch:
     inputs:
-      test_type:
-        description: "kafka | postgres | full"
+      artifact_id:
+        description: "ArtifactId from pom.xml (example: lombok | spring-boot-starter-web | all)"
         required: true
-        default: full
-        type: choice
-        options:
-          - kafka
-          - postgres
-          - full
-
-env:
-  KUBE_NAMESPACE: dev
-  APP_NAME: hello-app
+        type: string
+        default: all
 
 jobs:
-  setup-and-test:
+  artifact-validation:
     runs-on: ubuntu-latest
 
     steps:
-      # -----------------------------
-      # 1. Checkout code
-      # -----------------------------
-      - name: Checkout repository
+      # -----------------------------------
+      # 1. Checkout repository
+      # -----------------------------------
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # -----------------------------
-      # 2. Setup kubectl
-      # -----------------------------
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: v1.30.0
-
-      # -----------------------------
-      # 3. Setup Helm
-      # -----------------------------
-      - name: Setup Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: v3.14.0
-
-      # -----------------------------
-      # 4. Configure kubeconfig
-      # -----------------------------
-      - name: Configure kubeconfig
+      # -----------------------------------
+      # 2. Extract artifactIds from pom.xml
+      # -----------------------------------
+      - name: Parse pom.xml using shell
+        id: parse-pom
         run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          echo "🔍 Parsing pom.xml for artifactIds..."
 
-      # -----------------------------
-      # 5. Create namespace if missing
-      # -----------------------------
-      - name: Create namespace
-        run: |
-          kubectl create namespace $KUBE_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+          ARTIFACT_IDS=$(grep -oP '(?<=<artifactId>).*?(?=</artifactId>)' pom.xml \
+            | grep -vE 'spring-boot-starter-parent|maven|plugin' \
+            | sort -u)
 
-      # -----------------------------
-      # 6. Install Kafka (optional)
-      # -----------------------------
-      - name: Install Kafka
-        if: github.event.inputs.test_type == 'kafka' || github.event.inputs.test_type == 'full'
-        run: |
-          helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm upgrade --install kafka bitnami/kafka \
-            --namespace $KUBE_NAMESPACE
+          if [ -z "$ARTIFACT_IDS" ]; then
+            echo "❌ No artifactIds found in pom.xml"
+            exit 1
+          fi
 
-      # -----------------------------
-      # 7. Install Postgres (optional)
-      # -----------------------------
-      - name: Install Postgres
-        if: github.event.inputs.test_type == 'postgres' || github.event.inputs.test_type == 'full'
-        run: |
-          helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm upgrade --install postgres bitnami/postgresql \
-            --namespace $KUBE_NAMESPACE \
-            --set auth.postgresPassword=postgres
+          echo "📦 Available artifactIds:"
+          echo "$ARTIFACT_IDS"
 
-      # -----------------------------
-      # 8. Deploy Application via Helm
-      # -----------------------------
-      - name: Deploy Hello App
-        run: |
-          helm upgrade --install $APP_NAME ./helm/hello-app \
-            --namespace $KUBE_NAMESPACE
+          echo "ARTIFACT_IDS<<EOF" >> $GITHUB_ENV
+          echo "$ARTIFACT_IDS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
-      # -----------------------------
-      # 9. Wait for app readiness
-      # -----------------------------
-      - name: Wait for deployment
+      # -----------------------------------
+      # 3. Validate user input
+      # -----------------------------------
+      - name: Validate artifact input
         run: |
-          kubectl rollout status deployment/$APP_NAME \
-            -n $KUBE_NAMESPACE \
-            --timeout=120s
+          INPUT="${{ github.event.inputs.artifact_id }}"
 
-      # -----------------------------
-      # 10. Run integration tests (K8s Job)
-      # -----------------------------
-      - name: Run API Tests
-        run: |
-          kubectl apply -f helm/hello-app/templates/job-test.yaml -n $KUBE_NAMESPACE
-          kubectl wait \
-            --for=condition=complete \
-            job/hello-test \
-            -n $KUBE_NAMESPACE \
-            --timeout=120s
+          echo "🧑 User input: $INPUT"
 
-      # -----------------------------
-      # 11. Fetch test logs
-      # -----------------------------
-      - name: Get test logs
-        if: always()
-        run: |
-          kubectl logs job/hello-test -n $KUBE_NAMESPACE || true
+          if [ "$INPUT" = "all" ]; then
+            echo "✅ 'all' selected — using all artifacts"
+            echo "SELECTED_ARTIFACTS<<EOF" >> $GITHUB_ENV
+            echo "$ARTIFACT_IDS" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+            exit 0
+          fi
 
-      # -----------------------------
-      # 12. Cleanup (ALWAYS)
-      # -----------------------------
-      - name: Cleanup resources
-        if: always()
+          if echo "$ARTIFACT_IDS" | grep -w "$INPUT" >/dev/null; then
+            echo "✅ Artifact '$INPUT' found"
+            echo "SELECTED_ARTIFACTS=$INPUT" >> $GITHUB_ENV
+          else
+            echo "❌ Invalid artifactId: $INPUT"
+            echo "Valid artifactIds are:"
+            echo "$ARTIFACT_IDS"
+            exit 1
+          fi
+
+      # -----------------------------------
+      # 4. Use selected artifact(s)
+      # -----------------------------------
+      - name: Use selected artifact(s)
         run: |
-          kubectl delete job hello-test -n $KUBE_NAMESPACE || true
-          helm uninstall kafka -n $KUBE_NAMESPACE || true
-          helm uninstall postgres -n $KUBE_NAMESPACE || true
+          echo "🚀 Final artifact selection:"
+          echo "$SELECTED_ARTIFACTS"
+
+          # Example usage:
+          for artifact in $SELECTED_ARTIFACTS; do
+            echo "➡ Processing artifact: $artifact"
+            # place your logic here
+          done
