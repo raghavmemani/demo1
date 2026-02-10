@@ -1,22 +1,21 @@
-name: Deploy Release
+name: Test and Deploy
 
 on:
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: "Select the release tag to deploy (auto-updated)"
+      artifact_name:
+        description: "Enter artifact name (see artifact-list.txt)"
         required: true
         type: choice
-        options: []   # auto-filled by updater workflow
+        options:
+          # AUTO-GENERATED-OPTIONS-START
+          - placeholder
+          # AUTO-GENERATED-OPTIONS-END
 
 jobs:
-  deploy:
+  run:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.release_tag }}
-
-      - name: Deploy
+      - name: Print selected artifact
         run: |
-          echo "🚀 Deploying tag ${{ github.event.inputs.release_tag }}"
+          echo "Selected artifact: ${{ github.event.inputs.artifact_name }}"

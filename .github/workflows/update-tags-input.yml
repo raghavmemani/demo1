@@ -1,48 +1,26 @@
-name: Update Release Tag Inputs
+name: Update Workflow Options
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "*/1 * * * *"
   workflow_dispatch:
 
 jobs:
-  update-tags:
+  update:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
 
-      - name: Install yq
-        uses: mikefarah/yq@v4
+      - name: Make script executable
+        run: chmod +x scripts/update-workflow-options.sh
 
-      - name: Fetch recent git tags
-        id: tags
+      - name: Update workflow
+        run: ./scripts/update-workflow-options.sh
+
+      - name: Commit changes
         run: |
-          TAGS=$(git tag --sort=-v:refname \
-            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
-            | head -n 5)
-
-          echo "tags<<EOF" >> $GITHUB_OUTPUT
-          echo "$TAGS" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Update deploy.yml dropdown options
-        run: |
-          yq eval '
-            .on.workflow_dispatch.inputs.release_tag.options =
-            (strenv(TAGS) | split("\n"))
-          ' -i .github/workflows/deploy.yml
-        env:
-          TAGS: ${{ steps.tags.outputs.tags }}
-
-      - name: Commit updated workflow
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: auto-update release tag dropdown"
-          file_pattern: ".github/workflows/deploy.yml"
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .github/workflows/main.yml
+          git commit -m "Auto-update workflow dropdown options" || echo "No changes"
+          git push
