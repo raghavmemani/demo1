@@ -7,7 +7,9 @@ on:
         description: "Select the release tag to deploy (auto-updated)"
         required: true
         type: choice
-        options: []   # ⬅ updated automatically by cron job
+        options:
+        # AUTO-GENERATED-OPTIONS-START
+        # AUTO-GENERATED-OPTIONS-END
 
 jobs:
   deploy:
@@ -22,4 +24,3 @@ jobs:
       - name: Deploy
         run: |
           echo "🚀 Deploying release: ${{ github.event.inputs.release_tag }}"
-          # put real deployment steps here
