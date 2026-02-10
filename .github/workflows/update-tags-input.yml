@@ -2,7 +2,7 @@ name: Update Release Tag Inputs
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/1 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -67,7 +67,7 @@ jobs:
           cat .github/workflows/test-and-deploy.yml
 
       # --------------------------
-      # Update deploy.yml using yq
+      # Update test-and-deploy.yml using yq
       # --------------------------
       - name: Update test-and-deploy.yml with dynamic tags
         run: |
