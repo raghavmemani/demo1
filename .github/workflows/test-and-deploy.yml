@@ -4,6 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       test_type:
+        options:
+          - kafka
+          - postgres
+          - -full
         description: "kafka | postgres | full"
         required: true
         default: "full"
