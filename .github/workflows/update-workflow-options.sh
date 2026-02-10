@@ -1,44 +1,34 @@
-#!/bin/bash
-set -e
+name: Update Workflow Options
 
-POM_FILE="pom.xml"
-WORKFLOW_FILE=".github/workflows/test-and-deploy.yml"
-OUTPUT_FILE="artifact-list.txt"
+on:
+  schedule:
+    - cron: "*/1 * * * *"   # every 1 minute
+  workflow_dispatch:
 
-START_MARKER="# AUTO-GENERATED-OPTIONS-START"
-END_MARKER="# AUTO-GENERATED-OPTIONS-END"
+permissions:
+  contents: write
+  workflows: write
 
-echo "🔍 Extracting artifactIds from pom.xml..."
+jobs:
+  update:
+    runs-on: ubuntu-latest
 
-ARTIFACTS=$(grep -oP '(?<=<artifactId>).*?(?=</artifactId>)' "$POM_FILE" \
-  | sort -u)
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-if [ -z "$ARTIFACTS" ]; then
-  echo "❌ No artifactIds found"
-  exit 1
-fi
+      - name: Make script executable
+        run: chmod +x .github/workflows/update-workflow-options.sh
 
-echo "$ARTIFACTS" > "$OUTPUT_FILE"
+      - name: Run updater
+        run: .github/workflows/update-workflow-options.sh
 
-TMP_FILE=$(mktemp)
-
-awk -v start="$START_MARKER" -v end="$END_MARKER" -v items="$ARTIFACTS" '
-{
-  print
-  if ($0 ~ start) {
-    split(items, arr, "\n")
-    for (i in arr) {
-      printf "          - %s\n", arr[i]
-    }
-    skip=1
-  }
-  if ($0 ~ end) skip=0
-  next
-}
-' "$WORKFLOW_FILE" > "$TMP_FILE"
-
-mv "$TMP_FILE" "$WORKFLOW_FILE"
-
-echo "✅ Updated workflow options"
-echo "📄 artifact-list.txt contents:"
-cat "$OUTPUT_FILE"
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update artifact dropdown options"
+          file_pattern: |
+            .github/workflows/test-and-deploy.yml
+            artifact-list.txt
