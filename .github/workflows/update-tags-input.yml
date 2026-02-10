@@ -1,99 +1,85 @@
-name: Update Release Tag Inputs
+name: Update Workflow Options
 
 on:
   schedule:
-    - cron: "*/1 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
-  update-tags:
+  update:
     runs-on: ubuntu-latest
+
+    # 🔑 REQUIRED permissions
     permissions:
       contents: write
+      workflows: write
 
     steps:
-      - name: Checkout repository
+      # --------------------------
+      # Checkout repository
+      # --------------------------
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       # --------------------------
-      # Install yq binary (v4.x)
+      # Debug: Show repo structure
       # --------------------------
-      - name: Install yq v4
+      - name: Debug repo files
         run: |
-          sudo wget -qO /usr/local/bin/yq \
-            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
-          echo "YQ Version:"
-          yq --version
+          echo "===== ROOT FILES ====="
+          ls -la
+          echo "===== WORKFLOWS ====="
+          ls -la .github/workflows
 
       # --------------------------
-      # Fetch Tags
+      # Make script executable
       # --------------------------
-      - name: Fetch recent Git tags
-        id: fetch_tags
+      - name: Make update script executable
         run: |
-          echo "===== FETCHING TAGS ====="
-          git fetch --tags
-          echo "All tags in repo:"
-          git tag --sort=-v:refname | cat
-
-          TAGS_JSON=$(git tag --sort=-v:refname \
-            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
-            | head -n 5 \
-            | jq -R . \
-            | jq -s .)
-
-          echo "===== TAGS AS JSON ARRAY ====="
-          echo "$TAGS_JSON"
-
-          echo "tags=$TAGS_JSON" >> "$GITHUB_OUTPUT"
+          chmod +x .github/workflows/update-workflow-options.sh
+          ls -l .github/workflows/update-workflow-options.sh
 
       # --------------------------
-      # Debug: Raw output
+      # Debug: Show workflow BEFORE
       # --------------------------
-      - name: Debug TAG output from previous step
+      - name: Show test-and-deploy.yml BEFORE
         run: |
-          echo "===== RAW TAGS FROM OUTPUT ====="
-          echo "${{ steps.fetch_tags.outputs.tags }}"
-
-      # --------------------------
-      # Debug: Show deploy.yml BEFORE updating
-      # --------------------------
-      - name: Show test-and-deploy.yml BEFORE update
-        run: |
-          echo "===== test-and-deploy.yml BEFORE ====="
+          echo "===== BEFORE ====="
           cat .github/workflows/test-and-deploy.yml
 
       # --------------------------
-      # Update test-and-deploy.yml using yq
+      # Run your shell script
       # --------------------------
-      - name: Update test-and-deploy.yml with dynamic tags
+      - name: Run update-workflow-options.sh
         run: |
-          echo "===== RUNNING YQ UPDATE ====="
-          echo "Tags passed to yq:"
-          echo "$tags"
-
-          yq eval \
-            '.on.workflow_dispatch.inputs.release_tag.options = env(tags)' \
-            -i .github/workflows/test-and-deploy.yml
-        env:
-          tags: ${{ steps.fetch_tags.outputs.tags }}
+          echo "===== RUNNING SCRIPT ====="
+          .github/workflows/update-workflow-options.sh
 
       # --------------------------
-      # Debug: Show deploy.yml AFTER updating
+      # Debug: Show workflow AFTER
       # --------------------------
-      - name: Show test-and-deploy.yml AFTER update
+      - name: Show test-and-deploy.yml AFTER
         run: |
-          echo "===== test-and-deploy.yml AFTER ====="
+          echo "===== AFTER ====="
           cat .github/workflows/test-and-deploy.yml
 
       # --------------------------
-      # Commit changed file
+      # Debug: Show artifact-list.txt
+      # --------------------------
+      - name: Show artifact-list.txt
+        run: |
+          echo "===== artifact-list.txt ====="
+          cat artifact-list.txt
+
+      # --------------------------
+      # Commit changes
       # --------------------------
       - name: Commit updated workflow
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: update release_tag options (debug)"
-          file_pattern: ".github/workflows/test-and-deploy.yml"
+          commit_message: "chore: auto-update artifact dropdown options"
+          file_pattern: |
+            .github/workflows/test-and-deploy.yml
+            artifact-list.txt
