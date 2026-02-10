@@ -61,10 +61,10 @@ jobs:
       # --------------------------
       # Debug: Show deploy.yml BEFORE updating
       # --------------------------
-      - name: Show deploy.yml BEFORE update
+      - name: Show test-and-deploy.yml BEFORE update
         run: |
           echo "===== deploy.yml BEFORE ====="
-          cat .github/workflows/deploy.yml
+          cat .github/workflows/test-and-deploy.yml
 
       # --------------------------
       # Update deploy.yml using yq
