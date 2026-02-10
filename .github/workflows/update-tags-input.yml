@@ -40,13 +40,13 @@ jobs:
           echo "Fetched tags: $TAGS"
 
       # --- Update deploy.yml safely ---
-      - name: Update deploy.yml with dynamic tags
+      - name: Update test-and-deploy.yml with dynamic tags
         env:
           TAGS: ${{ steps.fetch_tags.outputs.tags }}
         run: |
           yq eval \
             '.on.workflow_dispatch.inputs.release_tag.options = env(TAGS)' \
-            -i .github/workflows/deploy.yml
+            -i .github/workflows/test-and-deploy.yml
 
       # --- Commit changes ---
       - name: Commit updated workflow
