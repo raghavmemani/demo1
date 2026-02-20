@@ -1,0 +1,17 @@
+build-helper-maven-plugin
+demo1
+graphqlcodegen-maven-plugin
+lombok
+maven-compiler-plugin
+maven-javadoc-plugin
+native-maven-plugin
+spring-boot-configuration-processor
+spring-boot-devtools
+spring-boot-docker-compose
+spring-boot-maven-plugin
+spring-boot-starter-parent
+spring-boot-starter-test
+spring-boot-starter-web
+spring-modulith-bom
+spring-modulith-starter-core
+spring-modulith-starter-test
