@@ -77,7 +77,7 @@
         <dependencies>
             <dependency>
                 <groupId>org.springframework.modulith</groupId>
-                <artifactId>spring-modulith-bom</artifactId>
+                <artifactId>spring-modulith-bom1</artifactId>
                 <version>${spring-modulith.version}</version>
                 <type>pom</type>
                 <scope>import</scope>

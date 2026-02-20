@@ -1,66 +1,90 @@
-#name: Update Artifact List
-#
-#on:
-#  schedule:
-#    - cron: "*/5 * * * *"
-#  workflow_dispatch:
-#
-#permissions:
-#  contents: write   # allowed
-#
-#jobs:
-#  generate:
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - name: Make script executable
-#        run: chmod +x .github/workflows/update-workflow-options.sh
-#
-#      - name: Generate artifact list
-#        run: .github/workflows/update-workflow-options.sh
-#
-#      - name: Commit artifact list
-#        uses: stefanzweifel/git-auto-commit-action@v5
-#        with:
-#          commit_message: "chore: update artifact list"
-#          file_pattern: artifact-list.txt
+name: Update Workflow Options
 
-
-# .github/workflows/update-tags-input.yml
-name: Update Release Tag Inputs
 on:
-  schedule:
-    - cron: "0 0 * * *"  # Run daily at midnight UTC
-  workflow_dispatch:  # Allow manual triggering if needed
+  # Trigger ONLY when pom.xml or the script changes
+  push:
+    branches:
+      - '**'
+    paths:
+      - pom.xml
+
+
+  # Optional: allow manual run
+  workflow_dispatch:
 
 jobs:
-  update-tags:
+  update:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # REQUIRED to push changes
+
     steps:
-      - name: Checkout repository
+      # --------------------------
+      # Checkout repository
+      # --------------------------
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history to get tags
+          fetch-depth: 0
 
-      - name: Install dependencies (yq)
+      # --------------------------
+      # Debug: Repo structure
+      # --------------------------
+      - name: Debug repo files
         run: |
-          # Install yq (YAML parser) to edit the workflow file
-          sudo apt update && sudo apt install -y yq
+          echo "===== ROOT FILES ====="
+          ls -la
+          echo "===== WORKFLOWS ====="
+          ls -la .github/workflows
 
-      - name: Fetch recent Git tags
-        id: fetch_tags
-        run: chmod +x .github/workflows/update-workflow-options.sh
-
-
-      - name: Update deploy.yml with dynamic tags
+      # --------------------------
+      # Install yq
+      # --------------------------
+      - name: Install yq
         run: |
-          # Use yq to overwrite the 'options' array in deploy.yml
-          yq eval ".on.workflow_dispatch.inputs.release_tag.options = ${{ steps.fetch_tags.outputs.TAGS }}" -i .github/workflows/deploy.yml
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          yq --version
 
+      # --------------------------
+      # Make script executable
+      # --------------------------
+      - name: Make update script executable
+        run: |
+          chmod +x .github/workflows/update-workflow-options.sh
+
+      # --------------------------
+      # Show workflow BEFORE
+      # --------------------------
+      - name: Show test-and-deploy.yml BEFORE
+        run: |
+          echo "===== BEFORE ====="
+          cat .github/workflows/test-and-deploy.yml
+
+      # --------------------------
+      # Run update script
+      # --------------------------
+      - name: Run update-workflow-options.sh
+        run: |
+          .github/workflows/update-workflow-options.sh
+
+      # --------------------------
+      # Show workflow AFTER
+      # --------------------------
+      - name: Show test-and-deploy.yml AFTER
+        run: |
+          echo "===== AFTER ====="
+          cat .github/workflows/test-and-deploy.yml
+
+      # --------------------------
+      # Commit only if changes exist
+      # --------------------------
       - name: Commit updated workflow
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: update release_tag options with recent tags"
-          file_pattern: ".github/workflows/deploy.yml"
+          commit_message: "chore: auto-update artifact dropdown options"
+          file_pattern: |
+            .github/workflows/test-and-deploy.yml
+            artifact-list.txt
