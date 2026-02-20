@@ -1,4 +1,4 @@
-name: Update Workflow Options
+name: dropdown-options-update
 
 on:
   # Trigger automatically when pom.xml or script changes
