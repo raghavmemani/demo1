@@ -1,13 +1,13 @@
 name: Update Workflow Options
 
 on:
-  # Trigger ONLY when pom.xml or the script changes
+  # Trigger automatically when pom.xml or script changes
   push:
     paths:
       - pom.xml
       - .github/workflows/update-workflow-options.sh
 
-  # Optional: allow manual run
+  # Allow manual run from GitHub UI
   workflow_dispatch:
 
 jobs:
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write   # REQUIRED to push changes
+      contents: write   # REQUIRED to push changes back to repo
 
     steps:
       # --------------------------
@@ -27,7 +27,7 @@ jobs:
           fetch-depth: 0
 
       # --------------------------
-      # Debug: Repo structure
+      # Debug repo structure
       # --------------------------
       - name: Debug repo files
         run: |
@@ -37,7 +37,7 @@ jobs:
           ls -la .github/workflows
 
       # --------------------------
-      # Install yq
+      # Install yq (NO Maven)
       # --------------------------
       - name: Install yq
         run: |
@@ -50,8 +50,7 @@ jobs:
       # Make script executable
       # --------------------------
       - name: Make update script executable
-        run: |
-          chmod +x .github/workflows/update-workflow-options.sh
+        run: chmod +x .github/workflows/update-workflow-options.sh
 
       # --------------------------
       # Show workflow BEFORE
@@ -59,13 +58,14 @@ jobs:
       - name: Show test-and-deploy.yml BEFORE
         run: |
           echo "===== BEFORE ====="
-          cat .github/workflows/test-and-deploy.yml
+          cat .github/workflows/test-and-deploy.yml || true
 
       # --------------------------
       # Run update script
       # --------------------------
       - name: Run update-workflow-options.sh
         run: |
+          set -euo pipefail
           .github/workflows/update-workflow-options.sh
 
       # --------------------------
@@ -74,7 +74,7 @@ jobs:
       - name: Show test-and-deploy.yml AFTER
         run: |
           echo "===== AFTER ====="
-          cat .github/workflows/test-and-deploy.yml
+          cat .github/workflows/test-and-deploy.yml || true
 
       # --------------------------
       # Commit only if changes exist
