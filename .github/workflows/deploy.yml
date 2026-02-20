@@ -1,0 +1,29 @@
+name: Deploy / Build Selected Artifact
+
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_id:
+        description: "Enter Maven artifactId (must exist in artifact-list.txt)"
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate artifact list
+        run: |
+          bash .github/workflows/extract-artifacts.sh
+
+      - name: Validate user input
+        run: |
+          bash .github/workflows/validate-artifact.sh "${{ github.event.inputs.artifact_id }}"
+
+      - name: Build selected module
+        run: |
+          mvn clean install -pl "${{ github.event.inputs.artifact_id }}" -am
