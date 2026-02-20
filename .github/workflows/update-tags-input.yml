@@ -3,9 +3,11 @@ name: Update Workflow Options
 on:
   # Trigger ONLY when pom.xml or the script changes
   push:
+    branches:
+      - '**'
     paths:
       - pom.xml
-      - .github/workflows/update-workflow-options.sh
+
 
   # Optional: allow manual run
   workflow_dispatch:
