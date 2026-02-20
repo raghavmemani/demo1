@@ -7,9 +7,8 @@ on:
         description: "Select the release tag to deploy (auto-updated)"
         required: true
         type: choice
-        options:
-        # AUTO-GENERATED-OPTIONS-START
-        # AUTO-GENERATED-OPTIONS-END
+        options: []
+
 
 jobs:
   deploy:

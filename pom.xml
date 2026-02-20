@@ -69,6 +69,13 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- User-requested artifact -->
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>raghav</artifactId>
+            <version/>
+        </dependency>
+
     </dependencies>
 
     <!-- ================= DEPENDENCY MANAGEMENT ================= -->
