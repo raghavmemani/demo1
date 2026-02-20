@@ -1,45 +1,14 @@
-#!/bin/bash
-set -e
-set -x   # 🔍 FULL DEBUG MODE
+#!/usr/bin/env bash
+set -euo pipefail
 
-POM_FILE="pom.xml"
 WORKFLOW_FILE=".github/workflows/test-and-deploy.yml"
 OUTPUT_FILE="artifact-list.txt"
 
-echo "===== RUNNING SCRIPT ====="
-echo "PWD: $(pwd)"
-ls -la
+echo "🔍 Extracting artifactId values from pom.xml..."
 
-# --------------------------
-# Validate files
-# --------------------------
-if [ ! -f "$POM_FILE" ]; then
-  echo "❌ pom.xml NOT FOUND"
-  exit 1
-fi
-
-if [ ! -f "$WORKFLOW_FILE" ]; then
-  echo "❌ Workflow file NOT FOUND"
-  exit 1
-fi
-
-# --------------------------
-# Install yq if missing
-# --------------------------
-if ! command -v yq >/dev/null 2>&1; then
-  echo "📦 Installing yq..."
-  sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-  sudo chmod +x /usr/local/bin/yq
-fi
-
-yq --version
-
-# --------------------------
-# Extract artifactIds
-# --------------------------
-echo "🔍 Extracting artifactIds from pom.xml..."
-
-ARTIFACTS=$(grep -oP '(?<=<artifactId>).*?(?=</artifactId>)' "$POM_FILE" \
+# Extract artifactIds (ignore parent + duplicates)
+ARTIFACTS=$(grep -oP '(?<=<artifactId>)[^<]+' pom.xml \
+  | grep -vE '^(parent|spring-boot-starter|spring-boot)$' \
   | sort -u)
 
 if [ -z "$ARTIFACTS" ]; then
@@ -47,31 +16,22 @@ if [ -z "$ARTIFACTS" ]; then
   exit 1
 fi
 
-echo "📦 Extracted artifacts:"
+echo "📦 Found artifacts:"
 echo "$ARTIFACTS"
 
+# Save plain list (optional but useful)
 echo "$ARTIFACTS" > "$OUTPUT_FILE"
 
-# --------------------------
-# Convert artifacts → YAML array
-# --------------------------
-YAML_ARRAY=$(printf "%s\n" "$ARTIFACTS" | yq -R . | yq -s .)
+# Convert to YAML array
+YAML_ARRAY=$(printf '%s\n' "$ARTIFACTS" | yq -R -o=json | yq -p=json -o=yaml)
 
 echo "🧾 YAML array:"
 echo "$YAML_ARRAY"
 
-# --------------------------
-# Update workflow using yq
-# --------------------------
-echo "✏️ Updating workflow file using yq..."
+echo "✏️ Updating workflow dropdown using yq..."
 
-yq eval \
-  ".on.workflow_dispatch.inputs.artifact.options = $YAML_ARRAY" \
-  -i "$WORKFLOW_FILE"
+yq eval "
+.on.workflow_dispatch.inputs.artifact.options = $YAML_ARRAY
+" -i "$WORKFLOW_FILE"
 
-# --------------------------
-# Final verification
-# --------------------------
 echo "✅ Workflow updated successfully"
-echo "===== UPDATED OPTIONS ====="
-yq '.on.workflow_dispatch.inputs.artifact.options' "$WORKFLOW_FILE"
