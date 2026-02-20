@@ -1,4 +1,7 @@
 name: dropdown-options-update
+permissions:
+  contents: write
+  actions: write
 
 on:
   # Trigger automatically when pom.xml or script changes
