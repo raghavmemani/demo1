@@ -1,72 +1,29 @@
-#!/bin/bash
-set -e
-set -x   # 🔍 FULL DEBUG MODE
+#!/usr/bin/env bash
+set -euo pipefail
 
-POM_FILE="pom.xml"
 WORKFLOW_FILE=".github/workflows/test-and-deploy.yml"
-OUTPUT_FILE="artifact-list.txt"
+TMP_OPTIONS=".github/workflows/.artifact-options.yml"
 
-START_MARKER="# AUTO-GENERATED-OPTIONS-START"
-END_MARKER="# AUTO-GENERATED-OPTIONS-END"
+echo "🔍 Extracting artifactId values from pom.xml..."
 
-echo "===== RUNNING SCRIPT ====="
-echo "PWD: $(pwd)"
-echo "Files in repo:"
-ls -la
+# Extract artifactIds safely
+grep -oP '(?<=<artifactId>)[^<]+' pom.xml \
+  | grep -vE '^(parent|spring-boot|spring-boot-starter.*)$' \
+  | sort -u \
+  | sed 's/^/- /' > "$TMP_OPTIONS"
 
-echo "🔍 Extracting artifactIds from pom.xml..."
-
-if [ ! -f "$POM_FILE" ]; then
-  echo "❌ pom.xml NOT FOUND"
-  exit 1
-fi
-
-ARTIFACTS=$(grep -oP '(?<=<artifactId>).*?(?=</artifactId>)' "$POM_FILE" | sort -u)
-
-echo "📦 Extracted artifacts:"
-echo "$ARTIFACTS"
-
-if [ -z "$ARTIFACTS" ]; then
+if [ ! -s "$TMP_OPTIONS" ]; then
   echo "❌ No artifactIds found"
   exit 1
 fi
 
-echo "$ARTIFACTS" > "$OUTPUT_FILE"
+echo "📦 Generated options:"
+cat "$TMP_OPTIONS"
 
-echo "📄 artifact-list.txt written:"
-cat "$OUTPUT_FILE"
+echo "✏️ Updating workflow dropdown using yq..."
 
-if ! grep -q "$START_MARKER" "$WORKFLOW_FILE"; then
-  echo "❌ START MARKER NOT FOUND in workflow"
-  exit 1
-fi
+yq eval '
+.on.workflow_dispatch.inputs.artifact.options = load("'"$TMP_OPTIONS"'")
+' -i "$WORKFLOW_FILE"
 
-if ! grep -q "$END_MARKER" "$WORKFLOW_FILE"; then
-  echo "❌ END MARKER NOT FOUND in workflow"
-  exit 1
-fi
-
-echo "✏️ Updating workflow file..."
-
-TMP_FILE=$(mktemp)
-
-awk -v start="$START_MARKER" -v end="$END_MARKER" -v items="$ARTIFACTS" '
-{
-  print
-  if ($0 ~ start) {
-    split(items, arr, "\n")
-    for (i in arr) {
-      printf "          - %s\n", arr[i]
-    }
-    skip=1
-  }
-  if ($0 ~ end) skip=0
-  next
-}
-' "$WORKFLOW_FILE" > "$TMP_FILE"
-
-mv "$TMP_FILE" "$WORKFLOW_FILE"
-
-echo "✅ Updated workflow options"
-echo "===== FINAL WORKFLOW SNIPPET ====="
-sed -n '/AUTO-GENERATED-OPTIONS-START/,/AUTO-GENERATED-OPTIONS-END/p' "$WORKFLOW_FILE"
+echo "✅ Workflow updated successfully"
