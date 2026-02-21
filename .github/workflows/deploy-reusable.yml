@@ -1,0 +1,31 @@
+name: Reusable Deploy Workflow
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: "Release tag to deploy"
+        required: true
+        type: string
+      environment:
+        description: "Deployment environment"
+        required: false
+        default: "dev"
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Debug Inputs
+        run: |
+          echo "Release tag: ${{ inputs.release_tag }}"
+          echo "Environment: ${{ inputs.environment }}"
+
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Deploy
+        run: |
+          echo "Deploying ${{ inputs.release_tag }} to ${{ inputs.environment }}"
