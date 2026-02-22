@@ -1,50 +1,19 @@
-name: Demo1
+name: Deploy Using Central Workflow
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag"
+        required: true
+      environment:
+        description: "Environment"
+        required: false
+        default: dev
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Build with Maven
-        run: mvn clean package -DskipTests
-
-      # Install Podman
-      - name: Install Podman
-        run: sudo apt-get update && sudo apt-get install -y podman
-
-      # Login to Podman Hub (Quay.io)
-      - name: Podman login
-        run: |
-          podman login quay.io \
-            -u ${{ secrets.PODMAN_USERNAME }} \
-            -p ${{ secrets.PODMAN_PASSWORD }}
-
-      # Build Podman image
-      - name: Build Podman image
-        run: |
-          podman build -t quay.io/${{ secrets.PODMAN_USERNAME }}/demo1:latest .
-
-      # Push image to Podman Hub
-      - name: Push Podman image
-        run: |
-          podman push quay.io/${{ secrets.PODMAN_USERNAME }}/demo1:latest
-
-      # Optional: Dependency graph
-      - name: Update dependency graph
-        uses: advanced-security/maven-dependency-submission-action@v4
+  deploy:
+    uses: raghavmemani/demo1/.github/workflows/deploy-reusable.yml@main
+    with:
+      release_tag: ${{ inputs.release_tag }}
+      environment: ${{ inputs.environment }}
