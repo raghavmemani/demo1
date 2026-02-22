@@ -11,11 +11,12 @@ on:
         description: "Select the artifact to build and deploy"
         required: true
         type: choice
-        options:
-        - build-helper-maven-plugin
-          - demo1
-          - graphqlcodegen-maven-plugin
-          - lombok
+        options: [ build-helper-maven-plugin,
+         central-repository12,
+         demo1,
+         graphqlcodegen-maven-plugin,
+         lombok]
+
 
 
 jobs:
