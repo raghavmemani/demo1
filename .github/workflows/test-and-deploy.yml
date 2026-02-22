@@ -1,21 +1,20 @@
-name: Resuable Maven Deploy Workflow
+name: Reusable Maven Deploy Workflow
+
 permissions:
   contents: write
   actions: write
-
 
 on:
   workflow_dispatch:
     inputs:
       artifact_id:
-        description: "Select the artifact to build and deploy (auto-updated)"
+        description: "Select the artifact to build and deploy"
         required: true
         type: choice
         options: [helper, api, service, all]
 
-
 jobs:
   build:
-    uses: raghavmemani\CENTRAL-REPOSIORY-\.github\workflows\maven.yml@main
+    uses: raghavmemani/CENTRAL-REPOSITORY/.github/workflows/maven.yml@main
     with:
-      release_tag: ${{ inputs.artifact_id}}
+      artifact_id: ${{ inputs.artifact_id }}
