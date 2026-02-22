@@ -15,6 +15,6 @@ on:
 
 jobs:
   build:
-    uses: raghavmemani/CENTRAL-REPOSIORY/.github/workflows/maven.yml@main
+    uses: raghavmemani/central_repository12/.github/workflows/maven.yml@main
     with:
       artifact_id: ${{ inputs.artifact_id }}
