@@ -6,7 +6,8 @@ on:
       release_tag:
         description: "Release tag to deploy"
         required: true
-        type: string
+        type: choice
+        options: []
       environment:
         description: "Deployment environment"
         required: false

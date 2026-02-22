@@ -1,4 +1,4 @@
-name: Deploy Release
+name: Resuable Maven Deploy Workflow
 permissions:
   contents: write
   actions: write
@@ -7,23 +7,15 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: "Select the release tag to deploy (auto-updated)"
+      artifact_id:
+        description: "Select the artifact to build and deploy (auto-updated)"
         required: true
         type: choice
-        options: []
+        options: [helper, api, service, all]
 
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout selected tag
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.release_tag }}
-
-      - name: Deploy
-        run: |
-          echo "🚀 Deploying release: ${{ github.event.inputs.release_tag }}"
+  build:
+    uses: raghavmemani/CENTRAL-REPOSITORY/.github/workflows/maven-reusable.yml@main
+    with:
+      release_tag: ${{ inputs.artifact_id}}
