@@ -11,7 +11,24 @@ on:
         description: "Select the artifact to build and deploy"
         required: true
         type: choice
-        options: [helper, api, service, all]
+        options: [build-helper-maven-plugin
+          demo1
+          graphqlcodegen-maven-plugin
+          lombok
+          maven-compiler-plugin
+          maven-javadoc-plugin
+          native-maven-plugin
+          raghav
+          spring-boot-configuration-processor
+          spring-boot-devtools
+          spring-boot-docker-compose
+          spring-boot-maven-plugin
+          spring-boot-starter-parent
+          spring-boot-starter-test
+          spring-boot-starter-web
+          spring-modulith-bom1
+          spring-modulith-starter-core
+          spring-modulith-starter-test]
 
 jobs:
   build:
