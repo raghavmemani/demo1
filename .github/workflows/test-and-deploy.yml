@@ -16,6 +16,6 @@ on:
 
 jobs:
   build:
-    uses: raghavmemani/CENTRAL-REPOSITORY/.github/workflows/maven-reusable.yml@main
+    uses: raghavmemani\CENTRAL-REPOSIORY-\.github\workflows\maven.yml@main
     with:
       release_tag: ${{ inputs.artifact_id}}
